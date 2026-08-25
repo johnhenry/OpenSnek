@@ -6,9 +6,11 @@ All notable changes to this project are documented in this file.
 
 ### Added
 - Added contributor-validated Razer Naga Pro support over USB (wired `0x008F` and 2.4 GHz receiver `0x0090`) and Bluetooth (`0x0092`), including DPI stages, two-zone static lighting/brightness, mapped onboard profiles, and grouped remapping for the known-safe buttons on all three side panels. Native default restore remains unavailable for side-panel slots whose factory blocks are unknown, and undecoded class-`0x03` slots remain read-only.
+- Added per-profile USB control capability flags (`supportsDPIControls`, `supportsPollRateControls`, `supportsPowerManagementControls`, `supportsButtonRemapControls`), a `DeviceFormFactor` (mouse/keyboard/keypad), and a per-profile brightness LED override so future non-mouse device profiles do not inherit mouse capabilities.
 
 ### Changed
 - Local app builds now fall back to SwiftPM on Command Line Tools-only Macs, while retaining the canonical Xcode target when full Xcode is available; local build and pre-push SwiftPM commands also skip irrelevant macOS Keychain credential lookup for public dependencies.
+- USB state reads and reachability checks now tolerate devices without DPI hardware by falling back to serial/firmware reads, and skip DPI, poll-rate, power-management, and onboard-profile commands on profiles that do not support them. Fast DPI polling and local-profile DPI adaptation also honor `supportsDPIControls`.
 
 ### Fixed
 - Fixed unsigned SwiftPM app bundles retaining an invalidated executable signature after their framework rpath was added.
