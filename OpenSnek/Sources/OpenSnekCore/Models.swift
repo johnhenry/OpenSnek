@@ -36,6 +36,8 @@ public enum DeviceProfileID: String, Codable, Hashable, Sendable {
     case basiliskV335K = "basilisk_v3_35k"
     case orochiV2 = "orochi_v2"
     case nagaPro = "naga_pro"
+    case basilisk = "basilisk"
+    case lanceheadTournamentEdition = "lancehead_tournament_edition"
 }
 
 /// Defines device form factor values.
