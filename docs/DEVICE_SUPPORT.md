@@ -47,6 +47,7 @@ Button remap keyboard actions support modifier chords on shipped USB and Bluetoo
 | Lancehead Tournament Edition | `Contributor validated` | `No transport` | Contributor validated DPI (scalar, independent X/Y, live 5-stage table read without OpenRazer's `0xFF` stage transaction), poll-rate reads, and all four lighting zones; button remap is not mapped |
 | Huntsman Mini | `Contributor validated` | `No transport` | Keyboard: contributor validated backlight lighting, brightness, and that poll-rate reads return `status 0x05` (unsupported). No DPI hardware; key remap is not mapped |
 | Tartarus Pro | `Contributor validated` | `No transport` | Keypad: contributor validated backlight lighting and brightness (LED `0x00` and `0x05` alias the same register). Analog actuation and key remap have no public protocol; OpenSnek never switches this device into driver mode |
+| Kraken Kitty V2 | `Mapped` | `No transport` | Headset: exposes only a single consumer-control USB HID interface (no 90-byte Razer control interface), so it speaks a separate legacy protocol (`KrakenLegacyProtocol` / `KrakenLegacyControlSession`) instead of the shared class/cmd protocol. Lighting-only; not yet hardware validated |
 
 ## Basilisk V3 USB Family Assumptions
 
@@ -252,6 +253,26 @@ USB PID `0x0244`, no Bluetooth transport. Keypad (`formFactor = .keypad`). Uses 
 | Button remap: unsupported slots | `Hidden` | `No transport` | No slots are documented |
 | Scroll controls | `Not shipped` | `No transport` | Not applicable to a keypad |
 | Onboard hardware profiles | `Single slot` | `No transport` | Profile ships with `onboardProfileCount = 1`. OpenRazer deliberately never switches the Tartarus Pro into driver mode (`DRIVER_MODE = False`) because its analog input handling misbehaves; OpenSnek likewise only reads device mode and must not write mode `0x03` to this device |
+
+## Kraken Kitty V2
+
+USB PID `0x0560`, no Bluetooth transport. Headset (`formFactor = .headset`). Unlike every other profile in this matrix, this device does not speak the shared Razer class/cmd feature-report protocol at all: macOS only exposes a single consumer-control USB HID interface for it (no 90-byte feature-report control interface), so `usesKrakenLegacyProtocol` routes it through a dedicated `KrakenLegacyControlSession` / `KrakenLegacyProtocol` pair instead of `USBHIDControlSession`. See [KRAKEN_LEGACY_PROTOCOL.md](./protocol/KRAKEN_LEGACY_PROTOCOL.md) for the address map. Not yet validated on real hardware; the protocol module and hardware transport are still being finalized.
+
+| Feature Area | USB | BT | Notes |
+|---|---|---|---|
+| Overall transport status | `Mapped` | `No transport` | Lighting-only profile; routed through the legacy Kraken protocol instead of the shared class/cmd interface. Awaiting hardware validation |
+| DPI stages + active stage | `Not shipped` | `No transport` | No DPI hardware; `supportsDPIControls` is false and the fast-DPI-poll path returns `nil` immediately |
+| Independent X/Y DPI | `Not shipped` | `No transport` | No DPI hardware |
+| Poll rate | `Not shipped` | `No transport` | No poll-rate hardware; `supportsPollRateControls` is false |
+| Sleep timeout | `Not shipped` | `No transport` | Wired headset; no power management |
+| Low battery threshold | `Not shipped` | `No transport` | Wired headset; no battery |
+| Battery telemetry | `Not shipped` | `No transport` | Wired headset; no battery |
+| Lighting: static color | `Mapped` | `No transport` | Static color writes the custom-color RAM address and the LED-mode byte via `KrakenLegacyProtocol.setEffectReports` |
+| Lighting: extra effects | `Mapped` | `No transport` | `off`, `spectrum`, `pulseSingle` (single-color breathing), and `pulseDual` (two-color breathing) are mapped; wave, reactive, `pulseRandom`, and three-color breathing are not exposed because the UI-facing `LightingEffectKind` set has no equivalent for them |
+| Button remap: shipped editable slots | `Not shipped` | `No transport` | No button hardware surfaced; the profile ships an empty button layout |
+| Button remap: unsupported slots | `Hidden` | `No transport` | No slots are documented |
+| Scroll controls | `Not shipped` | `No transport` | Not applicable to a headset |
+| Onboard hardware profiles | `Single slot` | `No transport` | Profile ships with `onboardProfileCount = 1`; USB state reads skip the mouse onboard-profile commands for non-mouse form factors |
 
 ## References
 

@@ -254,13 +254,19 @@ public struct DeviceProfile: Hashable, Sendable {
     public let supportsPowerManagementControls: Bool
     public let supportsButtonRemapControls: Bool
     public let usbBrightnessLEDIDs: [UInt8]?
+    /// True for devices that speak the legacy Razer Kraken headset USB protocol
+    /// (a bespoke EEPROM/RAM address space over a single consumer-control HID
+    /// interface) instead of the standard Razer class/cmd feature-report
+    /// protocol. Routing in `BridgeClient` checks this flag before applying the
+    /// usual 90-byte-feature-report control-interface requirements.
+    public let usesKrakenLegacyProtocol: Bool
     public let isLocallyValidated: Bool
 
     public init(
         id: DeviceProfileID, productName: String, transport: DeviceTransportKind, supportedProducts: Set<Int>, usbTransactionID: UInt8? = nil, buttonLayout: ButtonSlotLayout, supportsAdvancedLightingEffects: Bool, supportedLightingEffects: [LightingEffectKind] = LightingEffectKind.allCases,
         usbLightingLEDIDs: [UInt8] = [], usbLightingZones: [USBLightingZoneDescriptor] = [], softwareLightingFrameLayout: SoftwareLightingFrameLayout? = nil, supportedSoftwareLightingPresets: [SoftwareLightingPresetID] = [], passiveDPIInput: PassiveDPIInputDescriptor? = nil,
         supportsIndependentXYDPI: Bool = false, supportsScrollModeControls: Bool = false, supportsLightingBrightnessControls: Bool = false, usesProjectedDPIStageWriteReadback: Bool = false, onboardProfileSupport: OnboardProfileSupport = .unavailable, onboardProfileCount: Int = 1,
-        formFactor: DeviceFormFactor = .mouse, supportsDPIControls: Bool = true, supportsPollRateControls: Bool = true, supportsPowerManagementControls: Bool = true, supportsButtonRemapControls: Bool = true, usbBrightnessLEDIDs: [UInt8]? = nil,
+        formFactor: DeviceFormFactor = .mouse, supportsDPIControls: Bool = true, supportsPollRateControls: Bool = true, supportsPowerManagementControls: Bool = true, supportsButtonRemapControls: Bool = true, usbBrightnessLEDIDs: [UInt8]? = nil, usesKrakenLegacyProtocol: Bool = false,
         isLocallyValidated: Bool = true
     ) {
         self.id = id
@@ -288,6 +294,7 @@ public struct DeviceProfile: Hashable, Sendable {
         self.supportsPowerManagementControls = supportsPowerManagementControls
         self.supportsButtonRemapControls = supportsButtonRemapControls
         self.usbBrightnessLEDIDs = usbBrightnessLEDIDs
+        self.usesKrakenLegacyProtocol = usesKrakenLegacyProtocol
         self.isLocallyValidated = isLocallyValidated
     }
 
@@ -586,7 +593,24 @@ public enum DeviceProfiles {
         supportedLightingEffects: tartarusProUSBLightingEffects, usbLightingLEDIDs: [0x05], usbLightingZones: tartarusProUSBLightingZones, supportsLightingBrightnessControls: true, formFactor: .keypad, supportsDPIControls: false, supportsPollRateControls: false,
         supportsPowerManagementControls: false, supportsButtonRemapControls: false, usbBrightnessLEDIDs: [0x00], isLocallyValidated: false)
 
-    public static let all: [DeviceProfile] = [basiliskV3XUSB, basiliskV3USB, basiliskV3ProUSB, basiliskV335KUSB, basiliskV3XBluetooth, basiliskV3ProBluetooth, orochiV2Bluetooth, nagaProUSB, nagaProBluetooth, basiliskUSB, lanceheadTEUSB, huntsmanMiniUSB, tartarusProUSB]
+    // MARK: - Razer Kraken Kitty V2 (headset, legacy protocol, 0x0560)
+    //
+    // The Kraken Kitty V2 exposes only a single consumer-control USB HID
+    // interface (no 90-byte Razer feature-report control interface), so it
+    // cannot speak the shared class/cmd protocol every other profile above
+    // uses. `usesKrakenLegacyProtocol` routes it through
+    // `KrakenLegacyControlSession` / `KrakenLegacyProtocol` instead (a bespoke
+    // EEPROM/RAM address-space protocol; see docs/protocol/KRAKEN_LEGACY_PROTOCOL.md).
+    // Lighting-only: no DPI, poll-rate, power-management, or button-remap
+    // hardware, so all four of those capability flags are disabled and the
+    // button layout is empty, matching the Huntsman Mini / Tartarus Pro pattern.
+    public static let krakenKittyV2USBLightingEffects: [LightingEffectKind] = [.off, .staticColor, .spectrum, .pulseSingle, .pulseDual]
+
+    public static let krakenKittyV2USB = DeviceProfile(
+        id: .krakenKittyV2, productName: "Kraken Kitty V2", transport: .usb, supportedProducts: [0x0560], buttonLayout: ButtonSlotLayout(visibleSlots: [], writableSlots: []), supportsAdvancedLightingEffects: false, supportedLightingEffects: krakenKittyV2USBLightingEffects, formFactor: .headset,
+        supportsDPIControls: false, supportsPollRateControls: false, supportsPowerManagementControls: false, supportsButtonRemapControls: false, usesKrakenLegacyProtocol: true, isLocallyValidated: false)
+
+    public static let all: [DeviceProfile] = [basiliskV3XUSB, basiliskV3USB, basiliskV3ProUSB, basiliskV335KUSB, basiliskV3XBluetooth, basiliskV3ProBluetooth, orochiV2Bluetooth, nagaProUSB, nagaProBluetooth, basiliskUSB, lanceheadTEUSB, huntsmanMiniUSB, tartarusProUSB, krakenKittyV2USB]
 
     public static func resolve(vendorID: Int, productID: Int, transport: DeviceTransportKind) -> DeviceProfile? { all.first(where: { $0.matches(vendorID: vendorID, productID: productID, transport: transport) }) }
 
@@ -611,9 +635,10 @@ public enum DeviceProfiles {
         case .nagaPro: return 20_000
         case .basilisk: return 16_000
         case .lanceheadTournamentEdition: return 16_000
-        // The Huntsman Mini and Tartarus Pro have no DPI hardware; their profiles
-        // disable DPI controls, so this value is never surfaced.
-        case .huntsmanMini, .tartarusPro: return defaultMaximumDPI
+        // The Huntsman Mini, Tartarus Pro, and Kraken Kitty V2 have no DPI
+        // hardware; their profiles disable DPI controls, so this value is never
+        // surfaced.
+        case .huntsmanMini, .tartarusPro, .krakenKittyV2: return defaultMaximumDPI
         case nil: return defaultMaximumDPI
         }
     }
@@ -720,7 +745,7 @@ public enum DeviceProfiles {
     public static func supportsIndependentXYDPI(for profileID: DeviceProfileID?) -> Bool {
         switch profileID {
         case .basiliskV3, .basiliskV3Pro, .basiliskV335K, .basilisk, .lanceheadTournamentEdition: return true
-        case .basiliskV3XHyperspeed, .orochiV2, .nagaPro, .huntsmanMini, .tartarusPro, nil: return false
+        case .basiliskV3XHyperspeed, .orochiV2, .nagaPro, .huntsmanMini, .tartarusPro, .krakenKittyV2, nil: return false
         }
     }
 

@@ -26,6 +26,8 @@ extension OpenSnekProbe {
           OpenSnekProbe bt-lighting-color --color ff6600 [--zone all|scroll_wheel|logo|underglow] [--name "BSK V3 PRO"]
           OpenSnekProbe usb-info [--pid 0x00ab]
           OpenSnekProbe usb-battery-read [--pid 0x00ab]
+          OpenSnekProbe usb-kraken-info [--pid 0x0560]
+          OpenSnekProbe usb-kraken-effect --kind off|static|spectrum|pulse_single|pulse_dual [--color 00ff00] [--secondary ff00ff] [--pid 0x0560]
           OpenSnekProbe usb-lighting-info [--zone all|scroll_wheel|logo|underglow] [--pid 0x00ab]
           OpenSnekProbe usb-lighting-read [--zone all|scroll_wheel|logo|underglow] [--pid 0x00ab]
           OpenSnekProbe usb-lighting-brightness --value 128 [--zone all|scroll_wheel|logo|underglow] [--pid 0x00ab]

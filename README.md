@@ -40,6 +40,7 @@ Support is transport-specific. A mouse may be supported over USB, Bluetooth, or 
 | Lancehead Tournament Edition | Contributor validated | No | Contributor validated DPI (scalar, X/Y, live 5-stage table), poll-rate reads, and all four lighting zones; button remap not yet mapped |
 | Huntsman Mini | Contributor validated | No | Keyboard: contributor validated backlight lighting and brightness. First non-mouse profile; key remap not supported |
 | Tartarus Pro | Contributor validated | No | Keypad: contributor validated backlight lighting and brightness. Analog actuation and key remap have no public protocol |
+| Kraken Kitty V2 | Mapped | No | Headset: only exposes a single consumer-control USB HID interface, so it uses a separate legacy protocol instead of the shared Razer control interface. Lighting-only; not yet hardware validated |
 
 Status key:
 - `Validated` = supported and locally capture/test validated in OpenSnek

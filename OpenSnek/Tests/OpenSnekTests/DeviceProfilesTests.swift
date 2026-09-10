@@ -520,6 +520,29 @@ final class DeviceProfilesTests: XCTestCase {
         XCTAssertEqual(profile?.isLocallyValidated, false)
     }
 
+    func testResolveUSBProfileForKrakenKittyV2() {
+        let profile = DeviceProfiles.resolve(vendorID: 0x1532, productID: 0x0560, transport: .usb)
+        XCTAssertEqual(profile?.id, .krakenKittyV2)
+        XCTAssertEqual(profile?.productName, "Kraken Kitty V2")
+        XCTAssertEqual(profile?.formFactor, .headset)
+        XCTAssertEqual(profile?.buttonLayout.visibleSlots, [])
+        XCTAssertEqual(profile?.buttonLayout.writableSlots, [])
+        XCTAssertEqual(profile?.supportedLightingEffects, [.off, .staticColor, .spectrum, .pulseSingle, .pulseDual])
+        XCTAssertEqual(profile?.supportsAdvancedLightingEffects, false)
+        XCTAssertEqual(profile?.usesKrakenLegacyProtocol, true)
+        XCTAssertEqual(profile?.supportsDPIControls, false)
+        XCTAssertEqual(profile?.supportsPollRateControls, false)
+        XCTAssertEqual(profile?.supportsPowerManagementControls, false)
+        XCTAssertEqual(profile?.supportsButtonRemapControls, false)
+        XCTAssertEqual(profile?.isLocallyValidated, false)
+        XCTAssertEqual(DeviceProfiles.maximumDPI(for: profile?.id), DeviceProfiles.defaultMaximumDPI)
+        XCTAssertEqual(DeviceProfiles.supportsIndependentXYDPI(for: profile?.id), false)
+    }
+
+    func testOtherProfilesDoNotUseKrakenLegacyProtocol() {
+        for profile in DeviceProfiles.all where profile.id != .krakenKittyV2 { XCTAssertFalse(profile.usesKrakenLegacyProtocol, "profile \(profile.id) \(profile.transport)") }
+    }
+
     func testBrightnessLEDIDsDefaultToLightingLEDIDsUnlessOverridden() {
         for profile in DeviceProfiles.all where profile.usbBrightnessLEDIDs == nil { XCTAssertEqual(profile.allUSBBrightnessLEDIDs, profile.allUSBLightingLEDIDs, "profile \(profile.id) \(profile.transport)") }
 

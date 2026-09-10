@@ -16,6 +16,7 @@ Target device baseline:
 - Lancehead Tournament Edition (`USB PID 0x0060`, OpenRazer-backed USB profile only)
 - Huntsman Mini (`USB PID 0x0257`, keyboard, OpenRazer-backed USB lighting-only profile)
 - Tartarus Pro (`USB PID 0x0244`, keypad, OpenRazer-backed USB lighting-only profile)
+- Kraken Kitty V2 (`USB PID 0x0560`, headset, legacy Kraken protocol; not part of the shared USB/BLE HID feature-report protocol this document covers — see [KRAKEN_LEGACY_PROTOCOL.md](./KRAKEN_LEGACY_PROTOCOL.md))
 
 Transport paths:
 - USB/2.4GHz: 90-byte HID report protocol

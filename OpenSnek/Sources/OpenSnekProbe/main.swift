@@ -210,6 +210,13 @@ struct ProbeUSBLightingConcurrencyArgs {
     let productID: Int?
 }
 
+/// Stores probe USB Kraken lighting effect args data.
+struct ProbeUSBKrakenEffectArgs {
+    let effect: KrakenLegacyEffect
+    let kindRaw: String
+    let productID: Int?
+}
+
 /// Stores probe USB raw args data.
 struct ProbeUSBRawArgs {
     let classID: UInt8

@@ -90,6 +90,12 @@ actor BridgeClient {
 
     var deviceSessions: [String: USBHIDControlSession] = [:]
     var deviceSessionCandidates: [String: [USBHIDControlSession]] = [:]
+    // Kraken legacy-protocol headsets (e.g. Kraken Kitty V2) expose only a single
+    // consumer-control USB HID interface, which never satisfies
+    // USBHIDControlSession.supportsControlReports (needs a 90-byte feature
+    // report). Keep a parallel session keyed by device ID so profile-gated
+    // routing can talk to them without disturbing the standard Razer path above.
+    var krakenSessionsByDeviceID: [String: KrakenLegacyControlSession] = [:]
     var lastStateByDeviceID: [String: MouseState] = [:]
     var usbReconnectSettleUntilByDeviceID: [String: Date] = [:]
     let devicePresenceEvents = BroadcastStream<HIDDevicePresenceEvent>()
@@ -146,6 +152,7 @@ actor BridgeClient {
     private func invalidateDiscoveryState(for deviceID: String, reason: String) {
         deviceSessions.removeValue(forKey: deviceID)
         deviceSessionCandidates.removeValue(forKey: deviceID)
+        krakenSessionsByDeviceID.removeValue(forKey: deviceID)
         lastStateByDeviceID.removeValue(forKey: deviceID)
         passiveDpiArmedDeviceIDs.remove(deviceID)
         passiveDpiHeartbeatDeviceIDs.remove(deviceID)
@@ -306,6 +313,7 @@ actor BridgeClient {
 
         var modelsByID: [String: MouseDevice] = [:]
         var sessionsByID: [String: [(score: Int, session: USBHIDControlSession)]] = [:]
+        var krakenSessionsByID: [String: KrakenLegacyControlSession] = [:]
         var passiveDpiTargets: [PassiveDPIEventMonitor.WatchTarget] = []
         for device in devices {
             guard let vendor = USBHIDSupport.intProperty(device, key: kIOHIDVendorIDKey as CFString), vendor == usbVID || vendor == btVID, let product = USBHIDSupport.intProperty(device, key: kIOHIDProductIDKey as CFString) else { continue }
@@ -328,6 +336,11 @@ actor BridgeClient {
 
             let score = USBHIDSupport.handlePreferenceScore(device: device)
             sessionsByID[id, default: []].append((score: score, session: USBHIDControlSession(device: device, deviceID: id)))
+
+            // Legacy-protocol headsets never expose a 90-byte feature-report
+            // interface, so build a Kraken-flavored session alongside the
+            // regular one from the same matched IOHIDDevice candidates.
+            if profile?.usesKrakenLegacyProtocol == true, krakenSessionsByID[id] == nil { krakenSessionsByID[id] = KrakenLegacyControlSession(device: device, deviceID: id) }
         }
         var preferredSessionsByID: [String: USBHIDControlSession] = [:]
         var candidatesByID: [String: [USBHIDControlSession]] = [:]
@@ -346,6 +359,7 @@ actor BridgeClient {
         }
         deviceSessionCandidates = candidatesByID
         deviceSessions = preferredSessionsByID
+        krakenSessionsByDeviceID = krakenSessionsByID
         await updatePassiveDpiTracking(with: passiveDpiTargets)
         var result = Array(modelsByID.values)
 
@@ -443,6 +457,7 @@ actor BridgeClient {
     private func refreshUSBDiscoveryAfterReconnectSettle(deviceID: String, operation: String) async {
         deviceSessions.removeValue(forKey: deviceID)
         deviceSessionCandidates.removeValue(forKey: deviceID)
+        krakenSessionsByDeviceID.removeValue(forKey: deviceID)
         clearManagedHIDManager()
 
         do {
@@ -506,6 +521,12 @@ actor BridgeClient {
         }
 
         try await deferUSBReconnectReadIfNeeded(deviceID: device.id, operation: "read-state")
+
+        if usbDeviceProfile(for: device)?.usesKrakenLegacyProtocol == true {
+            let state = try await readKrakenLegacyState(device: device)
+            lastStateByDeviceID[device.id] = state
+            return state
+        }
 
         let sessions = sessionsFor(device: device)
         guard !sessions.isEmpty else {

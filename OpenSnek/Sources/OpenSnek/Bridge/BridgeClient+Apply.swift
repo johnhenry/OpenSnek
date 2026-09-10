@@ -56,6 +56,9 @@ extension BridgeClient {
 
     private func applyUSB(device: MouseDevice, patch: DevicePatch, options: ApplyOptions) async throws -> MouseState {
         try await deferUSBReconnectReadIfNeeded(deviceID: device.id, operation: "apply")
+
+        if usbDeviceProfile(for: device)?.usesKrakenLegacyProtocol == true { return try await applyKrakenLegacyUSB(device: device, patch: patch) }
+
         let orderedSessions = sessionsFor(device: device)
         guard !orderedSessions.isEmpty else {
             if managerAccessDenied { throw BridgeError.commandFailed("USB HID access denied by macOS. Enable Input Monitoring for OpenSnek " + "(or Terminal/Xcode when running via swift run/Xcode), then relaunch.") }

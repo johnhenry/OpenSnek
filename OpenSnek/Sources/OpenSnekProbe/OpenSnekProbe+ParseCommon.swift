@@ -27,6 +27,15 @@ extension OpenSnekProbe {
         return ProbeUSBLightingEffectArgs(effect: effect, zoneID: parseLightingZoneID(flags["--zone"]), productID: try parseOptionalUSBPID(args))
     }
 
+    static func parseUSBKrakenEffectArgs(_ args: [String]) throws -> ProbeUSBKrakenEffectArgs {
+        let flags = parseFlags(args)
+        guard let kindRaw = flags["--kind"] else { throw ProbeError.usage("Missing --kind\n\(usageText)") }
+        let primary = try parseRGBPatch(flags["--color"]) ?? RGBPatch(r: 0, g: 255, b: 0)
+        let secondary = try parseRGBPatch(flags["--secondary"]) ?? RGBPatch(r: 0, g: 170, b: 255)
+        let effect = try parseKrakenLegacyEffect(kindRaw: kindRaw, primary: primary, secondary: secondary)
+        return ProbeUSBKrakenEffectArgs(effect: effect, kindRaw: kindRaw, productID: try parseOptionalUSBPID(args))
+    }
+
     static func parseUSBLightingFrameArgs(_ args: [String]) throws -> ProbeUSBLightingFrameArgs {
         let flags = parseFlags(args)
         let productID = try parseOptionalUSBPID(args)

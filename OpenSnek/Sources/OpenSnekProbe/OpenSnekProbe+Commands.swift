@@ -202,6 +202,19 @@ extension OpenSnekProbe {
             let usb = try USBProbeClient(productID: try parseOptionalUSBPID(commandArgs))
             print("usb \(usb.describe())")
             if let battery = try usb.readBattery() { print("battery charging=\(battery.charging ? "yes" : "no") " + "raw=0x\(String(format: "%02x", battery.rawLevel)) " + "percent=\(battery.percent)") } else { print("battery: unavailable") }
+        case "usb-kraken-info":
+            let kraken = try KrakenProbeClient(productID: try parseOptionalUSBPID(commandArgs))
+            print("usb \(kraken.describe())")
+            if let serial = try kraken.readSerial() { print("serial=\(serial)") } else { print("serial: unavailable") }
+            if let ledMode = try kraken.readLEDMode() { print("led-mode byte=0x\(String(format: "%02x", ledMode.byte)) kind=\(ledMode.kind.map { String(describing: $0) } ?? "unknown")") } else { print("led-mode: unavailable") }
+        case "usb-kraken-effect":
+            let parsed = try parseUSBKrakenEffectArgs(commandArgs)
+            let kraken = try KrakenProbeClient(productID: parsed.productID)
+            print("usb \(kraken.describe()) kraken-effect kind=\(parsed.kindRaw)")
+            let succeeded = try kraken.writeEffect(parsed.effect)
+            print("kraken-effect-write status=\(succeeded ? "ok" : "failed")")
+            guard succeeded else { throw ProbeError.protocolError("Kraken lighting effect write failed") }
+            if let ledMode = try kraken.readLEDMode() { print("led-mode byte=0x\(String(format: "%02x", ledMode.byte)) kind=\(ledMode.kind.map { String(describing: $0) } ?? "unknown")") }
         default: return false
         }
         return true
