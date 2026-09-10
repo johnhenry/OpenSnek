@@ -299,9 +299,11 @@ Accepted commands are **never executed**: GET reads echo the request with zeroed
 
 At boot, the report-0x01 input buffer contains a **static 61-byte high-entropy blob** (`01 00 7b ff 00 80 ca 86 8d 54 45 55 96 31 f7 28 ...`) whose header parses like a valid frame (txn `0x7b`, flags `0x80`) with 55 bytes of noise-like payload. Working hypothesis: **a challenge that Synapse must answer before the firmware unlocks command execution.** Everything observed is consistent with a locked session: parse + acknowledge, execute nothing.
 
-## What would finish this
+## What would finish this — and the boundary on how
 
-1. A Windows Synapse USB capture of the first seconds after launch (see the capture guide) — the unlock exchange on report 0x01 will be right there, plus the exact working command frames.
-2. Or reverse engineering the handshake from Synapse's device plugins (largely .NET; decompilable).
+The macOS transport, frame builder, and profile scaffolding all exist; only the report-0x01 unlock is missing. But **how** that gap gets closed matters:
 
-The macOS transport, frame builder, and everything else needed for an implementation now exist; only the unlock exchange is missing.
+- **Legitimate**: passively capturing the traffic between Synapse and *your own* headset (the capture guide covers this) and documenting the observed plaintext exchange, the way OpenRazer-style projects have always worked. If the unlock turns out to be a fixed, replayable sequence, this is enough.
+- **Out of bounds for this project**: decompiling Razer Synapse to extract an unlock key, signing routine, or challenge-response algorithm. The firmware is deliberately gating command execution behind this exchange; pulling the secret out of the vendor's binary to defeat that lock is circumvention of an access-control mechanism, not protocol documentation. We will not go there.
+
+If the captured exchange proves to be a genuine per-session cryptographic challenge-response (rather than a static/replayable unlock), a passive capture alone will not be sufficient, and the honest outcome is that the Kraken Kitty V2 stays unsupported on macOS until Razer or the device firmware documents or opens the interface. The best next step in that case is asking the OpenRazer community / Razer directly whether the handshake is documented anywhere.
