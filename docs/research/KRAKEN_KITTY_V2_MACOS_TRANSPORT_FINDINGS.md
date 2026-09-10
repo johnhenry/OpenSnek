@@ -266,3 +266,42 @@ destructive or persistent action is known to have occurred.
 - `scratchpad/diag_desc.swift` -- dumps the raw HID report descriptor decoded above.
 - `scratchpad/run1.log` -- first full run (shows the misleading initial "success" on
   variant A that motivated the deeper 1b investigation).
+
+
+---
+
+# Addendum (2026-09-10): the real command surface found — report `0x01`, gated by a session handshake
+
+Follow-up live probing on the same unit, using **device-level USB control transfers** via `IOUSBDeviceInterface::DeviceRequest` (which coexists with Apple's HID driver — `USBDeviceOpen` succeeds non-exclusively; no DriverKit needed):
+
+## Transport results
+
+| Path | Result |
+|---|---|
+| SET_REPORT `wValue 0x0240` (report 0x40, V3-style, 9B and 13B) | STALL `0xE000404F` |
+| SET_REPORT `wValue 0x0204` (legacy 37B/27B) | STALL |
+| SET_REPORT `wValue 0x0300` (standard 90-byte feature, txn 0x60/0x1F/0xFF) | STALL `0xE0004051` |
+| SET_REPORT `wValue 0x0201` (report 0x01, 62-64B) | **ACCEPTED** |
+| GET_REPORT on inputs 0x01/0x05/0x08/0x0C/0x41/0x71 | works (descriptor sizes) |
+| Interrupt-pipe writes via IOHIDLib (report 0x01, 0x40) | accepted but inert |
+
+## Report-0x01 frame format (decoded empirically)
+
+62 bytes: `[0]=0x01 report id | [1]=0x00 | [2]=transaction id | [3..4]=don't care | [5]=flags, bit7 MUST be set | [6]=data size | [7]=command class | [8]=command id | [9..60]=arguments | [61]=XOR crc (observed conventions vary) | ...`
+
+The class/cmd/size semantics appear to be the standard Razer command set (class 0x00 serial/firmware, 0x0F extended-matrix lighting). Firmware actively validates frames:
+- `[5]` bit7 clear -> the input buffer is stamped with error `0xFE` at `[2]` and `[5]` is rewritten to `0x80`.
+- `[5]` bit7 set -> frame is accepted (input buffer echoes it with our transaction id intact).
+
+## The blocker: session gating
+
+Accepted commands are **never executed**: GET reads echo the request with zeroed arguments and status never becomes `0x02`; no interrupt IN report ever arrives; lighting write commands (0x0F 0x02 static, 0x0F 0x03 custom frame, both alignments, plus V3-style 0x40 frames) produce no visible change. Writes to the 4-byte `0x70` output ("doorbell" hypothesis) are accepted and inert; status channels 0x08/0x0C/0x41/0x71 read all-zero.
+
+At boot, the report-0x01 input buffer contains a **static 61-byte high-entropy blob** (`01 00 7b ff 00 80 ca 86 8d 54 45 55 96 31 f7 28 ...`) whose header parses like a valid frame (txn `0x7b`, flags `0x80`) with 55 bytes of noise-like payload. Working hypothesis: **a challenge that Synapse must answer before the firmware unlocks command execution.** Everything observed is consistent with a locked session: parse + acknowledge, execute nothing.
+
+## What would finish this
+
+1. A Windows Synapse USB capture of the first seconds after launch (see the capture guide) — the unlock exchange on report 0x01 will be right there, plus the exact working command frames.
+2. Or reverse engineering the handshake from Synapse's device plugins (largely .NET; decompilable).
+
+The macOS transport, frame builder, and everything else needed for an implementation now exist; only the unlock exchange is missing.
