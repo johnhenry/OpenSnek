@@ -44,6 +44,11 @@ public enum USBHIDSupport {
         return "pointer:\(UInt(bitPattern: Unmanaged.passUnretained(device).toOpaque()))"
     }
 
+    // The Razer vendor control channel is a 90-byte feature report; an interface
+    // that cannot carry one (e.g. a headset's consumer-control endpoint) can never
+    // answer configuration commands.
+    public static func supportsControlReports(maxFeatureReportSize: Int) -> Bool { maxFeatureReportSize >= 90 }
+
     public static func isDeviceUnavailableOpenResult(_ result: IOReturn) -> Bool {
         switch result {
         case kIOReturnNoDevice, kIOReturnOffline, kIOReturnNotOpen: return true
@@ -82,6 +87,8 @@ public final class USBHIDControlSession: @unchecked Sendable {
 
     public let device: IOHIDDevice
     public let deviceID: String
+
+    public var supportsControlReports: Bool { USBHIDSupport.supportsControlReports(maxFeatureReportSize: USBHIDSupport.intProperty(device, key: kIOHIDMaxFeatureReportSizeKey as CFString) ?? 0) }
 
     private static let deviceLockRegistry = DeviceLockRegistry()
     private var cachedTxn: UInt8?

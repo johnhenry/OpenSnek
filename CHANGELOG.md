@@ -15,6 +15,7 @@ All notable changes to this project are documented in this file.
 - USB state reads and reachability checks now tolerate devices without DPI hardware by falling back to serial/firmware reads, and skip DPI, poll-rate, power-management, and onboard-profile commands on profiles that do not support them. Fast DPI polling and local-profile DPI adaptation also honor `supportsDPIControls`.
 
 ### Fixed
+- Fixed Razer devices without the standard 90-byte USB control interface (e.g. the Kraken Kitty V2 headset, which macOS exposes only through a consumer-control HID endpoint) being shown as a disconnected mouse with an endless "USB dongle is connected, but the mouse is not responding" reconnect loop. Such devices are now classified as Unsupported with an explanation, and OpenSnek stops probing them. The receiver message also now says "device" instead of "mouse".
 - Fixed unsigned SwiftPM app bundles retaining an invalidated executable signature after their framework rpath was added.
 - Fixed onboard profile names remaining stuck on synthesized `Profile N` labels after profile switches; assigned profile names now load when the profile picker refreshes.
 - Stopped metadata fallbacks from creating repeated local profile entries without treating legitimate user-named `Profile N` profiles as disposable placeholders.

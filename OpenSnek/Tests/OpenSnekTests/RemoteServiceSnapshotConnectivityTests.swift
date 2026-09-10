@@ -121,7 +121,7 @@ final class RemoteServiceSnapshotConnectivityTests: XCTestCase {
         XCTAssertEqual(status, "Disconnected")
         XCTAssertFalse(controlsEnabled)
         XCTAssertEqual(presentedDpi, 1600)
-        XCTAssertEqual(message, "The USB dongle is connected, but the mouse is not responding. Wake or power on the mouse to reconnect.")
+        XCTAssertEqual(message, "The USB dongle is connected, but the device is not responding. Wake or power on the device to reconnect.")
     }
 
     func testStaleRemoteSnapshotUSBUnavailableDoesNotOverrideNewerUSBActivity() async {
