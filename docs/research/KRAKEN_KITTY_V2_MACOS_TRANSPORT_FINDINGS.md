@@ -322,3 +322,38 @@ Conclusions:
 - librazermacos only lists Kraken V2 (`0x0510`) and Kraken Ultimate (`0x0527`); PID `0x0560` (Kitty V2) is absent. No open-source project actually drives this newer revision on any OS via a documented protocol path that this hardware honors.
 
 **Decisive result:** every documented Razer protocol (legacy `0x04`, standard 90-byte, V3 `0x40`) is stalled by this unit's firmware; only report `0x01` is accepted, and it withholds execution. No further macOS-side transport work can change this. The remaining legitimate paths are external (a Synapse capture of this exact unit, or upstream documentation), with the circumvention boundary from the first addendum still in force. This device is correctly left unsupported.
+
+
+---
+
+# Addendum 3 (2026-09-10): protocol SOLVED (V3 `0x40`), macOS delivery BLOCKED
+
+This supersedes the "session handshake on report 0x01" theory in the earlier addenda. With the headset moved to a Linux host (NixOS, kernel 6.12) and driven directly over `/dev/hidraw0`, the device's real lighting protocol was identified and fully validated.
+
+## The protocol (validated, repeatable, on Linux)
+
+The Kitty V2 speaks the Razer **V3 `0x40`** protocol (OpenRGB's `RazerKrakenV3Controller`), NOT the legacy `0x04` memory protocol (which this unit stalls) nor the standard 90-byte protocol (also stalled). See [../protocol/KRAKEN_V3_PROTOCOL.md](../protocol/KRAKEN_V3_PROTOCOL.md). Confirmed on hardware with unambiguous visual changes:
+- static red / green / blue / white (RGB order correct),
+- brightness including `0x00` = fully dark,
+- spectrum / color-cycle,
+- single mirrored zone (per-LED addressing not honored; breathing not honored).
+
+Linux delivery: `write()` of a 13/15-byte `[0x40, cmd, args…]` report to the device's `hidraw` node, which the kernel issues as `SET_REPORT` (`wValue 0x0240`, `wIndex 3`). Works every time.
+
+## macOS delivery is blocked (corrects an earlier overclaim in this session)
+
+An earlier note in this session claimed macOS delivery was "cracked" after one apparent red. That was wrong: an unambiguous **brightness-zero / off** test returned API success while the headset stayed lit, proving the writes were not reaching the device. The single "red" was the device's power-on/default state, not a delivered command.
+
+Results on macOS (device on the Mac's USB, Input Monitoring granted):
+
+| Path | Result |
+|---|---|
+| `IOHIDDeviceSetReport(Output, reportID 0, [0x40,…], 13B)` | returns `kIOReturnSuccess` but **does not reach the device** (off-test stayed lit) |
+| `IOHIDDeviceSetReport(Output, reportID 0x40, 12B payload)` | `0xE0005000` |
+| `IOUSBDeviceInterface` `DeviceRequest` SET_REPORT `wValue 0x0240 wIndex 3` | mode byte (`cmd 0x01`) ACKs; color/brightness (`cmd 0x03`/`0x02`) **stall** `0xE000404F` |
+
+Root cause: Apple's `IOHIDFamily` matches and owns interface 3 (a consumer/audio-control HID interface). Output reports handed to it are accepted-but-dropped for this vendor protocol, and device-level control `SET_REPORT`s to that interface are stalled by the device for the lighting commands while another driver owns the interface. Linux succeeds because `usbhid` owns the interface and its HID path delivers the real `SET_REPORT`; older Krakens succeed on macOS via device-level control transfers, but this newer firmware does not.
+
+## Consequence
+
+OpenSnek's HID-based architecture cannot drive this device on macOS. The protocol is not the blocker — delivery is. The realistic path is a driver that claims interface 3; see [KRAKEN_KITTY_V2_DRIVERKIT_SCOPE.md](./KRAKEN_KITTY_V2_DRIVERKIT_SCOPE.md).

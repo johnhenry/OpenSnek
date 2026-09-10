@@ -1,5 +1,8 @@
 # Kraken Legacy USB Protocol Documentation
 
+> **Note (2026-09):** The Kraken Kitty V2 (`0x0560`) does **not** use this legacy protocol in practice — hardware validation showed it stalls these `0x04` commands and instead speaks the V3 `0x40` protocol. See [KRAKEN_V3_PROTOCOL.md](./KRAKEN_V3_PROTOCOL.md). This document is retained for older Kraken models.
+
+
 This document describes the legacy Razer Kraken headset USB HID protocol used by
 `OpenSnekProtocols/KrakenLegacyProtocol.swift` and
 `OpenSnekHardware/KrakenLegacyControlSession.swift`. It is a distinct protocol
