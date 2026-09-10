@@ -134,6 +134,7 @@ extension BridgeClient {
     }
 
     nonisolated static func shouldUseFastDPIPolling(device: MouseDevice, armedPassiveDpiDeviceIDs: Set<String>, observedPassiveDpiDeviceIDs: Set<String>) -> Bool {
+        guard device.supportsDPIControls else { return false }
         guard armedPassiveDpiDeviceIDs.contains(device.id) else { return true }
         return !observedPassiveDpiDeviceIDs.contains(device.id)
     }

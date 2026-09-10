@@ -36,7 +36,8 @@ import OpenSnekCore
     }
 
     private func localProfileDevicePatch(_ content: OpenSnekLocalProfileContent, device: MouseDevice) -> LocalProfileDevicePatch {
-        let dpiPatch = localProfileDPIPatch(content.dpi)
+        // Defensive twin of the adaptation-time DPI strip for non-DPI devices.
+        let dpiPatch = localProfileDPIPatch(device.supportsDPIControls ? content.dpi : nil)
         let lightingPatch = localProfileLightingPatch(content, device: device)
         let supportsScrollModeControls = device.supportsScrollModeControls
         let patch = DevicePatch(

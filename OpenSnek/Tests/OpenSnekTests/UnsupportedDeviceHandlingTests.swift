@@ -110,6 +110,17 @@ final class UnsupportedDeviceHandlingTests: XCTestCase {
         XCTAssertTrue(fullMouse.lighting)
     }
 
+    func testFastDpiPollingKeepsCurrentBehaviorForDPICapableDevices() {
+        let unprofiled = MouseDevice(id: "usb-unprofiled", vendor_id: 0x1532, product_id: 0x1234, product_name: "Razer USB Mystery Mouse", transport: .usb, path_b64: "", serial: nil, firmware: nil)
+        let profiledMouse = MouseDevice(id: "usb-v3pro", vendor_id: 0x1532, product_id: 0x00AB, product_name: "Razer Basilisk V3 Pro", transport: .usb, path_b64: "", serial: nil, firmware: nil)
+
+        XCTAssertTrue(unprofiled.supportsDPIControls)
+        XCTAssertTrue(profiledMouse.supportsDPIControls)
+        XCTAssertTrue(BridgeClient.shouldUseFastDPIPolling(device: unprofiled, armedPassiveDpiDeviceIDs: [], observedPassiveDpiDeviceIDs: []))
+        XCTAssertTrue(BridgeClient.shouldUseFastDPIPolling(device: profiledMouse, armedPassiveDpiDeviceIDs: [], observedPassiveDpiDeviceIDs: []))
+        XCTAssertFalse(BridgeClient.shouldUseFastDPIPolling(device: profiledMouse, armedPassiveDpiDeviceIDs: [profiledMouse.id], observedPassiveDpiDeviceIDs: [profiledMouse.id]))
+    }
+
     func testManagerNotPermittedWithInputMonitoringGrantedIsNotADenial() {
         XCTAssertFalse(BridgeClient.resolvedManagerAccessDenied(openResult: kIOReturnNotPermitted, inputMonitoringGranted: true))
         XCTAssertTrue(BridgeClient.resolvedManagerAccessDenied(openResult: kIOReturnNotPermitted, inputMonitoringGranted: false))

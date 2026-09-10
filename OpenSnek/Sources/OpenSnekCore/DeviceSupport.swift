@@ -340,6 +340,10 @@ public extension MouseDevice {
         return resolvedProfile?.supportedSoftwareLightingPresets ?? []
     }
 
+    // Defaults to true for unprofiled devices so existing mouse behavior is
+    // unchanged; only profiles that explicitly disable DPI opt out.
+    var supportsDPIControls: Bool { resolvedProfile?.supportsDPIControls ?? true }
+
     var supportsScrollModeControls: Bool {
         guard transport == .usb else { return false }
         return resolvedProfile?.supportsScrollModeControls ?? false
