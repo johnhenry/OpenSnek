@@ -521,7 +521,7 @@ final class DeviceProfilesTests: XCTestCase {
     }
 
     func testResolveUSBProfileForKrakenKittyV2() {
-        let profile = DeviceProfiles.resolve(vendorID: 0x1532, productID: 0x0560, transport: .usb)
+        let profile: DeviceProfile? = DeviceProfiles.krakenKittyV2USB
         XCTAssertEqual(profile?.id, .krakenKittyV2)
         XCTAssertEqual(profile?.productName, "Kraken Kitty V2")
         XCTAssertEqual(profile?.formFactor, .headset)

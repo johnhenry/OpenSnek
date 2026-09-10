@@ -610,7 +610,16 @@ public enum DeviceProfiles {
         id: .krakenKittyV2, productName: "Kraken Kitty V2", transport: .usb, supportedProducts: [0x0560], buttonLayout: ButtonSlotLayout(visibleSlots: [], writableSlots: []), supportsAdvancedLightingEffects: false, supportedLightingEffects: krakenKittyV2USBLightingEffects, formFactor: .headset,
         supportsDPIControls: false, supportsPollRateControls: false, supportsPowerManagementControls: false, supportsButtonRemapControls: false, usesKrakenLegacyProtocol: true, isLocallyValidated: false)
 
-    public static let all: [DeviceProfile] = [basiliskV3XUSB, basiliskV3USB, basiliskV3ProUSB, basiliskV335KUSB, basiliskV3XBluetooth, basiliskV3ProBluetooth, orochiV2Bluetooth, nagaProUSB, nagaProBluetooth, basiliskUSB, lanceheadTEUSB, huntsmanMiniUSB, tartarusProUSB, krakenKittyV2USB]
+    public static let all: [DeviceProfile] = [basiliskV3XUSB, basiliskV3USB, basiliskV3ProUSB, basiliskV335KUSB, basiliskV3XBluetooth, basiliskV3ProBluetooth, orochiV2Bluetooth, nagaProUSB, nagaProBluetooth, basiliskUSB, lanceheadTEUSB, huntsmanMiniUSB, tartarusProUSB]
+
+    // krakenKittyV2USB is intentionally NOT registered in `all`. Hardware
+    // validation (2026-09) showed macOS cannot deliver the legacy Kraken
+    // vendor protocol through IOHIDLib on this device: its HID descriptor
+    // declares Output report 4 as 26 bytes / Input report 5 as 22 bytes
+    // (smaller than the 36/32-byte Linux wire format sent via raw control
+    // transfers), explicit-ID SetReport is rejected, and no request ever
+    // produced a populated response. Until a working transport exists, the
+    // device stays on the unsupported/no-control-interface path.
 
     public static func resolve(vendorID: Int, productID: Int, transport: DeviceTransportKind) -> DeviceProfile? { all.first(where: { $0.matches(vendorID: vendorID, productID: productID, transport: transport) }) }
 

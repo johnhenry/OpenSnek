@@ -13,22 +13,21 @@ final class KrakenLegacyDeviceTests: XCTestCase {
 
     // MARK: - Capability gating
 
-    func testKrakenHeadsetReportsNoDPIPollOrPowerControls() {
-        let headset = makeHeadsetDevice()
-        XCTAssertFalse(headset.supportsDPIControls)
-        XCTAssertFalse(headset.supportsScrollModeControls)
-        XCTAssertFalse(headset.supportsLightingBrightnessControls)
+    // The profile is intentionally unregistered (no working macOS transport), so
+    // device-level helpers resolve no profile; assert the profile's own flags,
+    // which apply if the profile is ever registered.
+    func testKrakenHeadsetProfileDisablesNonLightingControls() {
+        let profile = DeviceProfiles.krakenKittyV2USB
+        XCTAssertFalse(profile.supportsDPIControls)
+        XCTAssertFalse(profile.supportsPollRateControls)
+        XCTAssertFalse(profile.supportsPowerManagementControls)
+        XCTAssertFalse(profile.supportsButtonRemapControls)
+        XCTAssertFalse(profile.supportsScrollModeControls)
+        XCTAssertFalse(profile.supportsLightingBrightnessControls)
     }
 
-    func testFastDPIPollingIsDisabledForKrakenHeadset() {
-        let headset = makeHeadsetDevice()
-        XCTAssertFalse(BridgeClient.shouldUseFastDPIPolling(device: headset, armedPassiveDpiDeviceIDs: [], observedPassiveDpiDeviceIDs: []))
-    }
-
-    func testFastDPIBackendReadReturnsNilForKrakenHeadset() async throws {
-        let client = BridgeClient(startHIDMonitoring: false)
-        let snapshot = try await client.readDpiStagesFast(device: makeHeadsetDevice())
-        XCTAssertNil(snapshot)
+    func testUnregisteredKrakenHeadsetStaysOnUnsupportedPath() {
+        XCTAssertNil(DeviceProfiles.resolve(vendorID: 0x1532, productID: 0x0560, transport: .usb))
     }
 
     // MARK: - Effect mapping
@@ -49,7 +48,7 @@ final class KrakenLegacyDeviceTests: XCTestCase {
     }
 
     func testKrakenKittyV2ProfileOnlyAdvertisesMappableLightingEffects() {
-        let profile = DeviceProfiles.resolve(vendorID: 0x1532, productID: 0x0560, transport: .usb)
+        let profile: DeviceProfile? = DeviceProfiles.krakenKittyV2USB
         for kind in profile?.supportedLightingEffects ?? [] {
             XCTAssertNotNil(BridgeClient.krakenLegacyEffect(from: LightingEffectPatch(kind: kind)), "advertised kind \(kind.rawValue) must be mappable")
         }
@@ -66,10 +65,10 @@ final class KrakenLegacyDeviceTests: XCTestCase {
     func testResponsePayloadRequiresMatchingReportID() {
         let request = KrakenLegacyProtocol.readRAMReport(address: KrakenLegacyProtocol.ledModeAddress, length: 1)
         var response = [UInt8](repeating: 0, count: KrakenLegacyProtocol.responseLength)
-        response[0] = KrakenLegacyProtocol.reportID
+        response[0] = KrakenLegacyProtocol.responseReportID
         XCTAssertNotNil(KrakenLegacyProtocol.responsePayload(response, request: request))
 
-        response[0] = KrakenLegacyProtocol.reportID &+ 1
+        response[0] = KrakenLegacyProtocol.responseReportID &+ 1
         XCTAssertNil(KrakenLegacyProtocol.responsePayload(response, request: request))
     }
 }

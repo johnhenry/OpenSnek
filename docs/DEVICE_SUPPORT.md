@@ -47,7 +47,7 @@ Button remap keyboard actions support modifier chords on shipped USB and Bluetoo
 | Lancehead Tournament Edition | `Contributor validated` | `No transport` | Contributor validated DPI (scalar, independent X/Y, live 5-stage table read without OpenRazer's `0xFF` stage transaction), poll-rate reads, and all four lighting zones; button remap is not mapped |
 | Huntsman Mini | `Contributor validated` | `No transport` | Keyboard: contributor validated backlight lighting, brightness, and that poll-rate reads return `status 0x05` (unsupported). No DPI hardware; key remap is not mapped |
 | Tartarus Pro | `Contributor validated` | `No transport` | Keypad: contributor validated backlight lighting and brightness (LED `0x00` and `0x05` alias the same register). Analog actuation and key remap have no public protocol; OpenSnek never switches this device into driver mode |
-| Kraken Kitty V2 | `Mapped` | `No transport` | Headset: exposes only a single consumer-control USB HID interface (no 90-byte Razer control interface), so it speaks a separate legacy protocol (`KrakenLegacyProtocol` / `KrakenLegacyControlSession`) instead of the shared class/cmd protocol. Lighting-only; not yet hardware validated |
+| Kraken Kitty V2 | `Not shipped` | `No transport` | Headset speaking the legacy Kraken protocol. Contributor hardware validation (2026-09) showed macOS cannot deliver that protocol through IOHIDLib, so `krakenKittyV2USB` is deliberately unregistered and the device stays on the honest unsupported path; the protocol/transport groundwork remains in-tree. See [research findings](../docs/research/KRAKEN_KITTY_V2_MACOS_TRANSPORT_FINDINGS.md) |
 
 ## Basilisk V3 USB Family Assumptions
 
@@ -256,11 +256,11 @@ USB PID `0x0244`, no Bluetooth transport. Keypad (`formFactor = .keypad`). Uses 
 
 ## Kraken Kitty V2
 
-USB PID `0x0560`, no Bluetooth transport. Headset (`formFactor = .headset`). Unlike every other profile in this matrix, this device does not speak the shared Razer class/cmd feature-report protocol at all: macOS only exposes a single consumer-control USB HID interface for it (no 90-byte feature-report control interface), so `usesKrakenLegacyProtocol` routes it through a dedicated `KrakenLegacyControlSession` / `KrakenLegacyProtocol` pair instead of `USBHIDControlSession`. See [KRAKEN_LEGACY_PROTOCOL.md](./protocol/KRAKEN_LEGACY_PROTOCOL.md) for the address map. Not yet validated on real hardware; the protocol module and hardware transport are still being finalized.
+USB PID `0x0560`, no Bluetooth transport. Headset (`formFactor = .headset`). Unlike every other profile in this matrix, this device does not speak the shared Razer class/cmd feature-report protocol at all; the in-tree `KrakenLegacyProtocol` / `KrakenLegacyControlSession` pair implements OpenRazer's legacy 37-byte Kraken protocol for it. **The profile is deliberately not registered**: contributor hardware validation (2026-09) proved macOS cannot deliver this protocol through IOHIDLib — the device's HID descriptor declares Output report 4 as 26 bytes and Input report 5 as 22 bytes (smaller than the Linux 36/32-byte wire format, which Linux sends via raw control transfers that bypass the descriptor), explicit-ID `SetReport` calls are rejected, and no request ever produced a populated response. Full evidence in [KRAKEN_KITTY_V2_MACOS_TRANSPORT_FINDINGS.md](../docs/research/KRAKEN_KITTY_V2_MACOS_TRANSPORT_FINDINGS.md); protocol details in [KRAKEN_LEGACY_PROTOCOL.md](./protocol/KRAKEN_LEGACY_PROTOCOL.md). Until a working transport exists (likely requiring the newer report-ID 1 / 0x40 channel to be reverse engineered, or a DriverKit extension), the device presents as Unsupported via the no-control-interface path.
 
 | Feature Area | USB | BT | Notes |
 |---|---|---|---|
-| Overall transport status | `Mapped` | `No transport` | Lighting-only profile; routed through the legacy Kraken protocol instead of the shared class/cmd interface. Awaiting hardware validation |
+| Overall transport status | `Not shipped` | `No transport` | Profile unregistered; macOS transport for the legacy protocol proved non-functional on contributor hardware |
 | DPI stages + active stage | `Not shipped` | `No transport` | No DPI hardware; `supportsDPIControls` is false and the fast-DPI-poll path returns `nil` immediately |
 | Independent X/Y DPI | `Not shipped` | `No transport` | No DPI hardware |
 | Poll rate | `Not shipped` | `No transport` | No poll-rate hardware; `supportsPollRateControls` is false |
