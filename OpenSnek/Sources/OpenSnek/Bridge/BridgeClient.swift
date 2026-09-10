@@ -392,6 +392,13 @@ actor BridgeClient {
         return lowered.contains("telemetry unavailable") || lowered.contains("usable responses")
     }
 
+    // Message matching keeps classification working across the IPC service
+    // boundary, where errors arrive as strings rather than typed BridgeErrors.
+    nonisolated static func isUSBNoControlInterfaceError(_ error: any Error) -> Bool {
+        if let bridgeError = error as? BridgeError, case .usbNoControlInterface = bridgeError { return true }
+        return error.localizedDescription.lowercased().contains("razer usb control interface")
+    }
+
     nonisolated static func usbReconnectSettleDeadline(for event: HIDDevicePresenceEvent) -> Date? {
         guard event.transport == .usb, event.change == .connected else { return nil }
         return event.observedAt.addingTimeInterval(Self.usbReconnectSettleInterval)
@@ -505,6 +512,10 @@ actor BridgeClient {
             if managerAccessDenied { throw BridgeError.commandFailed("USB HID access denied by macOS. Enable Input Monitoring for OpenSnek " + "(or Terminal/Xcode when running via swift run/Xcode), then relaunch.") }
             throw BridgeError.commandFailed("Device not available")
         }
+        // A device with HID interfaces but no 90-byte feature-report channel (e.g. a
+        // headset exposing only consumer controls) can never answer Razer commands;
+        // fail with a distinct error instead of masquerading as a sleeping mouse.
+        guard sessions.contains(where: \.supportsControlReports) else { throw BridgeError.usbNoControlInterface }
 
         var firstError: Error?
         for (index, session) in sessions.enumerated() {
@@ -558,6 +569,7 @@ actor BridgeClient {
         try await deferUSBReconnectReadIfNeeded(deviceID: device.id, operation: "fast-dpi-read")
         let orderedSessions = sessionsFor(device: device)
         guard !orderedSessions.isEmpty else { return nil }
+        guard orderedSessions.contains(where: \.supportsControlReports) else { return nil }
 
         var firstError: Error?
         for session in orderedSessions {
