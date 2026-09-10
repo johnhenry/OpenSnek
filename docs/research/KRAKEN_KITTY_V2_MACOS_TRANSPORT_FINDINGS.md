@@ -307,3 +307,18 @@ The macOS transport, frame builder, and profile scaffolding all exist; only the 
 - **Out of bounds for this project**: decompiling Razer Synapse to extract an unlock key, signing routine, or challenge-response algorithm. The firmware is deliberately gating command execution behind this exchange; pulling the secret out of the vendor's binary to defeat that lock is circumvention of an access-control mechanism, not protocol documentation. We will not go there.
 
 If the captured exchange proves to be a genuine per-session cryptographic challenge-response (rather than a static/replayable unlock), a passive capture alone will not be sufficient, and the honest outcome is that the Kraken Kitty V2 stays unsupported on macOS until Razer or the device firmware documents or opens the interface. The best next step in that case is asking the OpenRazer community / Razer directly whether the handshake is documented anywhere.
+
+
+---
+
+# Addendum 2 (2026-09-10): transport ruled out as the cause
+
+To test whether the stalls were a macOS transport mistake rather than a device refusal, the established macOS port `1kc/librazermacos` (the macOS port of OpenRazer's Kraken driver) was examined. Its `razer_kraken_send_control_msg` issues an **identical** control transfer to what this project's spike already used:
+
+`bmRequestType = 0x21 (CLASS|INTERFACE|OUT)`, `bRequest = 0x09 (SET_REPORT)`, `wValue = 0x0204`, `wIndex = 0x0003`, `wLength = 37`, via device-level `IOUSBDeviceInterface::DeviceRequest`.
+
+Conclusions:
+- The spike's transport **is** the canonical macOS approach; the legacy-protocol stall on this unit is a firmware-level refusal, not an API error.
+- librazermacos only lists Kraken V2 (`0x0510`) and Kraken Ultimate (`0x0527`); PID `0x0560` (Kitty V2) is absent. No open-source project actually drives this newer revision on any OS via a documented protocol path that this hardware honors.
+
+**Decisive result:** every documented Razer protocol (legacy `0x04`, standard 90-byte, V3 `0x40`) is stalled by this unit's firmware; only report `0x01` is accepted, and it withholds execution. No further macOS-side transport work can change this. The remaining legitimate paths are external (a Synapse capture of this exact unit, or upstream documentation), with the circumvention boundary from the first addendum still in force. This device is correctly left unsupported.
