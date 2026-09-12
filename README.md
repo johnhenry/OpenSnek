@@ -154,6 +154,7 @@ that process will not be documented in detail here, other than noting it can be 
 - Device support matrix by feature and transport: [docs/DEVICE_SUPPORT.md](docs/DEVICE_SUPPORT.md)
 - DMG release and notarization setup: [docs/release/DMG_RELEASE.md](docs/release/DMG_RELEASE.md)
 - Protocol documentation: [docs/protocol/PROTOCOL.md](docs/protocol/PROTOCOL.md)
+- Kraken Kitty V2 research (unsupported on macOS): [protocol and transport findings](docs/research/KRAKEN_KITTY_V2_MACOS_TRANSPORT_FINDINGS.md)
 - Supported Python tooling: [tools/python/README.md](tools/python/README.md)
 - BLE capture corpus: [captures/README.md](captures/README.md)
 
