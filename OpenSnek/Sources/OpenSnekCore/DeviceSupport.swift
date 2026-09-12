@@ -260,8 +260,7 @@ public struct DeviceProfile: Hashable, Sendable {
         id: DeviceProfileID, productName: String, transport: DeviceTransportKind, supportedProducts: Set<Int>, usbTransactionID: UInt8? = nil, buttonLayout: ButtonSlotLayout, supportsAdvancedLightingEffects: Bool, supportedLightingEffects: [LightingEffectKind] = LightingEffectKind.allCases,
         usbLightingLEDIDs: [UInt8] = [], usbLightingZones: [USBLightingZoneDescriptor] = [], softwareLightingFrameLayout: SoftwareLightingFrameLayout? = nil, supportedSoftwareLightingPresets: [SoftwareLightingPresetID] = [], passiveDPIInput: PassiveDPIInputDescriptor? = nil,
         supportsIndependentXYDPI: Bool = false, supportsScrollModeControls: Bool = false, supportsLightingBrightnessControls: Bool = false, usesProjectedDPIStageWriteReadback: Bool = false, onboardProfileSupport: OnboardProfileSupport = .unavailable, onboardProfileCount: Int = 1,
-        formFactor: DeviceFormFactor = .mouse, supportsDPIControls: Bool = true, supportsPollRateControls: Bool = true, supportsPowerManagementControls: Bool = true, supportsButtonRemapControls: Bool = true, usbBrightnessLEDIDs: [UInt8]? = nil,
-        isLocallyValidated: Bool = true
+        formFactor: DeviceFormFactor = .mouse, supportsDPIControls: Bool = true, supportsPollRateControls: Bool = true, supportsPowerManagementControls: Bool = true, supportsButtonRemapControls: Bool = true, usbBrightnessLEDIDs: [UInt8]? = nil, isLocallyValidated: Bool = true
     ) {
         self.id = id
         self.productName = productName
@@ -514,7 +513,44 @@ public enum DeviceProfiles {
         id: .nagaPro, productName: "Naga Pro", transport: .bluetooth, supportedProducts: [0x0092], buttonLayout: ButtonSlotLayout(visibleSlots: nagaProUSBButtonSlots, writableSlots: nagaProUSBWritableSlots, documentedSlots: nagaProUSBDocumentedReadOnlySlots), supportsAdvancedLightingEffects: false,
         supportedLightingEffects: [], usbLightingLEDIDs: [0x01, 0x04], usbLightingZones: nagaProUSBLightingZones, supportsLightingBrightnessControls: true, onboardProfileSupport: .mappedCore, onboardProfileCount: 5, isLocallyValidated: false)
 
-    public static let all: [DeviceProfile] = [basiliskV3XUSB, basiliskV3USB, basiliskV3ProUSB, basiliskV335KUSB, basiliskV3XBluetooth, basiliskV3ProBluetooth, orochiV2Bluetooth, nagaProUSB, nagaProBluetooth]
+    // MARK: - Razer Basilisk (2017, 0x0064)
+
+    // OpenRazer-backed USB profile (razermouse_driver.c): extended-matrix lighting on
+    // logo (0x04) + scroll wheel (0x01), 16,000 DPI ceiling, no wave effect.
+    // Contributor hardware validation confirmed DPI (scalar + independent X/Y + a live
+    // 5-stage table), poll-rate reads, and all listed lighting effects with transaction
+    // 0x1F (OpenRazer uses 0x3F; hardware answers both). Button remap and onboard
+    // profiles are not mapped yet, so those controls stay hidden.
+    public static let basiliskUSBLightingEffects: [LightingEffectKind] = [.off, .staticColor, .spectrum, .reactive, .pulseRandom, .pulseSingle, .pulseDual]
+
+    public static let basiliskUSBLightingZones: [USBLightingZoneDescriptor] = [USBLightingZoneDescriptor(id: "scroll_wheel", label: "Scroll Wheel", ledIDs: [0x01]), USBLightingZoneDescriptor(id: "logo", label: "Logo", ledIDs: [0x04])]
+
+    public static let basiliskUSB = DeviceProfile(
+        id: .basilisk, productName: "Basilisk", transport: .usb, supportedProducts: [0x0064], usbTransactionID: 0x1F, buttonLayout: ButtonSlotLayout(visibleSlots: ButtonSlotDescriptor.defaults, writableSlots: []), supportsAdvancedLightingEffects: true,
+        supportedLightingEffects: basiliskUSBLightingEffects, usbLightingLEDIDs: [0x01, 0x04], usbLightingZones: basiliskUSBLightingZones, supportsIndependentXYDPI: true, supportsLightingBrightnessControls: true, supportsPowerManagementControls: false, supportsButtonRemapControls: false,
+        isLocallyValidated: false)
+
+    // MARK: - Razer Lancehead Tournament Edition (wired, 0x0060)
+
+    // OpenRazer-backed USB profile: extended-matrix lighting on logo (0x04), scroll
+    // wheel (0x01), and the left (0x11) / right (0x10) side strips, 16,000 DPI ceiling,
+    // wave supported. Contributor hardware validation confirmed DPI (scalar +
+    // independent X/Y + a live 5-stage table read without OpenRazer's 0xFF stage
+    // transaction quirk), poll-rate reads, and all listed lighting effects with
+    // transaction 0x1F. Button remap is not mapped yet.
+    public static let lanceheadTEUSBLightingEffects: [LightingEffectKind] = [.off, .staticColor, .spectrum, .wave, .reactive, .pulseRandom, .pulseSingle, .pulseDual]
+
+    public static let lanceheadTEUSBLightingZones: [USBLightingZoneDescriptor] = [
+        USBLightingZoneDescriptor(id: "scroll_wheel", label: "Scroll Wheel", ledIDs: [0x01]), USBLightingZoneDescriptor(id: "logo", label: "Logo", ledIDs: [0x04]), USBLightingZoneDescriptor(id: "left_side", label: "Left Side", ledIDs: [0x11]),
+        USBLightingZoneDescriptor(id: "right_side", label: "Right Side", ledIDs: [0x10])
+    ]
+
+    public static let lanceheadTEUSB = DeviceProfile(
+        id: .lanceheadTournamentEdition, productName: "Lancehead Tournament Edition", transport: .usb, supportedProducts: [0x0060], usbTransactionID: 0x1F, buttonLayout: ButtonSlotLayout(visibleSlots: ButtonSlotDescriptor.defaults, writableSlots: []), supportsAdvancedLightingEffects: true,
+        supportedLightingEffects: lanceheadTEUSBLightingEffects, usbLightingLEDIDs: [0x01, 0x04, 0x11, 0x10], usbLightingZones: lanceheadTEUSBLightingZones, supportsIndependentXYDPI: true, supportsLightingBrightnessControls: true, supportsPowerManagementControls: false,
+        supportsButtonRemapControls: false, isLocallyValidated: false)
+
+    public static let all: [DeviceProfile] = [basiliskV3XUSB, basiliskV3USB, basiliskV3ProUSB, basiliskV335KUSB, basiliskV3XBluetooth, basiliskV3ProBluetooth, orochiV2Bluetooth, nagaProUSB, nagaProBluetooth, basiliskUSB, lanceheadTEUSB]
 
     public static func resolve(vendorID: Int, productID: Int, transport: DeviceTransportKind) -> DeviceProfile? { all.first(where: { $0.matches(vendorID: vendorID, productID: productID, transport: transport) }) }
 
@@ -537,6 +573,8 @@ public enum DeviceProfiles {
         case .basiliskV335K: return 35_000
         case .orochiV2: return 18_000
         case .nagaPro: return 20_000
+        case .basilisk: return 16_000
+        case .lanceheadTournamentEdition: return 16_000
         case nil: return defaultMaximumDPI
         }
     }
@@ -642,7 +680,7 @@ public enum DeviceProfiles {
 
     public static func supportsIndependentXYDPI(for profileID: DeviceProfileID?) -> Bool {
         switch profileID {
-        case .basiliskV3, .basiliskV3Pro, .basiliskV335K: return true
+        case .basiliskV3, .basiliskV3Pro, .basiliskV335K, .basilisk, .lanceheadTournamentEdition: return true
         case .basiliskV3XHyperspeed, .orochiV2, .nagaPro, nil: return false
         }
     }
