@@ -360,6 +360,7 @@ private struct RefreshStateReadContext {
 
     func usbControlAvailabilityFailure(_ error: Error, device: MouseDevice, isAvailabilityFailure: Bool) -> USBControlAvailability? {
         guard device.transport == .usb else { return nil }
+        if BridgeClient.isUSBNoControlInterfaceError(error) { return .noControlInterface }
         if BridgeClient.isUSBTelemetryUnavailableError(error) { return .receiverPresentMouseUnavailable }
         if isAvailabilityFailure, Self.isDeviceNotAvailableMessage(error.localizedDescription) { return .receiverAbsent }
         return nil

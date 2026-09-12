@@ -361,6 +361,10 @@ import OpenSnekHardware
     func connectionState(for device: MouseDevice) -> DeviceConnectionState {
         guard !isTearingDown else { return .disconnected }
         if isStrictlyUnsupported(device) { return .unsupported }
+        // A plugged-in Razer device without the 90-byte control interface (e.g. the
+        // Kraken headsets on macOS) is present but permanently uncontrollable; show
+        // it as unsupported rather than looping through disconnected/reconnecting.
+        if device.transport == .usb, usbControlAvailability(for: device) == .noControlInterface { return .unsupported }
 
         if !deviceStore.devices.contains(where: { $0.id == device.id }) && deviceStore.selectedDeviceID != device.id { return .disconnected }
 

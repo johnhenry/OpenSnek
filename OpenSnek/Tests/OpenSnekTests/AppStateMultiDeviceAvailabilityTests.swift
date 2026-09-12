@@ -183,7 +183,7 @@ final class AppStateMultiDeviceAvailabilityTests: XCTestCase {
         XCTAssertNil(presentedState)
         XCTAssertEqual(status, "Disconnected")
         XCTAssertTrue(fastPollingDeviceIDs.isEmpty)
-        XCTAssertEqual(message, "The USB dongle is connected, but the mouse is not responding. Wake or power on the mouse to reconnect.")
+        XCTAssertEqual(message, "The USB dongle is connected, but the device is not responding. Wake or power on the device to reconnect.")
     }
 
     func testSelectedUSBUnavailableThenReachableClearsBackoffAndRefreshes() async throws {
@@ -429,7 +429,7 @@ final class AppStateMultiDeviceAvailabilityTests: XCTestCase {
         let message = await MainActor.run { appState.deviceStore.selectedDeviceInteractionMessage }
 
         XCTAssertFalse(controlsEnabled)
-        XCTAssertEqual(message, "The USB dongle is connected, but the mouse is not responding. Wake or power on the mouse to reconnect.")
+        XCTAssertEqual(message, "The USB dongle is connected, but the device is not responding. Wake or power on the device to reconnect.")
     }
 
     func testNewUSBInsertUnavailableReadStaysReconnectingDuringConnectGrace() async {

@@ -154,6 +154,8 @@ extension BridgeClient {
             return .receiverAbsent
         }
 
+        guard orderedSessions.contains(where: \.supportsControlReports) else { return .noControlInterface }
+
         var firstError: Error?
         for (index, session) in orderedSessions.enumerated() {
             do {
@@ -592,6 +594,7 @@ extension BridgeClient {
             case .receiverPresentMouseReachable, .unknown: break
             case .receiverPresentMouseUnavailable: throw BridgeError.usbMouseUnavailable
             case .receiverAbsent: throw BridgeError.commandFailed("Device not available")
+            case .noControlInterface: throw BridgeError.usbNoControlInterface
             }
         }
         throw BridgeError.commandFailed("Failed to write software lighting frame")
