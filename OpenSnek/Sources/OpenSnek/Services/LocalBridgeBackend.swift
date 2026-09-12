@@ -130,7 +130,13 @@ final actor LocalBridgeBackend: HIDAccessRefreshControllingBackend, ApplyOptions
         let availability: USBControlAvailability
         if BridgeClient.isUSBNoControlInterfaceError(error) {
             availability = .noControlInterface
-        } else if BridgeClient.isUSBTelemetryUnavailableError(error) { availability = .receiverPresentMouseUnavailable } else if Self.isDeviceNotAvailableError(error) { availability = .receiverAbsent } else { availability = usbControlAvailabilityByDeviceID[device.id] ?? .unknown }
+        } else if BridgeClient.isUSBTelemetryUnavailableError(error) {
+            availability = .receiverPresentMouseUnavailable
+        } else if Self.isDeviceNotAvailableError(error) {
+            availability = .receiverAbsent
+        } else {
+            availability = usbControlAvailabilityByDeviceID[device.id] ?? .unknown
+        }
         if availability != .unknown { recordUSBControlAvailability(availability, for: device.id, updatedAt: Date(), publishSnapshot: true) }
     }
 

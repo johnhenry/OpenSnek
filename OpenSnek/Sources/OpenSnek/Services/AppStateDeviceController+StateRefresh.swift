@@ -163,6 +163,9 @@ private struct RefreshStateReadContext {
     func canStartRefreshState(for device: MouseDevice, now: Date) -> Bool {
         guard !isTearingDown else { return false }
         guard !isStrictlyUnsupported(device) else { return false }
+        // Discovery clears this classification when interfaces change or a device
+        // reconnects. Full telemetry reads cannot recover a missing control channel.
+        guard usbControlAvailability(for: device) != .noControlInterface else { return false }
         guard !refreshingStateDeviceIDs.contains(device.id) else { return false }
         guard !isRestoringSettings(for: device) else {
             AppLog.debug("AppState", "refreshState skipped restoring-settings device=\(device.id)")
@@ -377,7 +380,7 @@ private struct RefreshStateReadContext {
     }
 
     func surfaceSelectedRefreshFailure(_ context: RefreshFailureContext, error: Error, device: MouseDevice) -> Bool {
-        if context.isUSBTelemetryUnavailable {
+        if context.isUSBTelemetryUnavailable || usbControlAvailability(for: device) == .noControlInterface {
             deviceStore.errorMessage = nil
             deviceStore.warningMessage = nil
             if !context.hasCachedPresentationState {
