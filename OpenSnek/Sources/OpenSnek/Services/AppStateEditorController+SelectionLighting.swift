@@ -141,21 +141,19 @@ import OpenSnekCore
             lightingEffect = nil
         }
 
-        // Saved snapshots can contain editor defaults for controls this device does
-        // not expose. Skip power writes so wired mice can still restore lighting.
-        let supportsPowerManagement = DeviceProfiles.resolve(vendorID: device.vendor_id, productID: device.product_id, transport: device.transport)?.supportsPowerManagementControls ?? true
+        // Saved snapshots can contain mouse-editor defaults even for lighting-only
+        // devices. Filter unsupported controls before scheduling their restore.
         // On-connect restore refreshes saved DPI values but keeps the active stage live.
         let patch = DevicePatch(
-            pollRate: snapshot.pollRate, sleepTimeout: supportsPowerManagement ? snapshot.sleepTimeout : nil, lowBatteryThresholdRaw: supportsPowerManagement ? snapshot.lowBatteryThresholdRaw : nil, scrollMode: device.supportsScrollModeControls ? snapshot.scrollMode : nil,
-            scrollAcceleration: device.supportsScrollModeControls ? snapshot.scrollAcceleration : nil, scrollSmartReel: device.supportsScrollModeControls ? snapshot.scrollSmartReel : nil, dpiStages: Array(snapshot.stageValues.prefix(snapshot.stageCount)),
-            dpiStagePairs: Array(snapshot.stagePairs.prefix(snapshot.stageCount)), ledBrightness: device.supportsLightingBrightnessControls ? snapshot.ledBrightness : nil, ledRGB: lightingEffect == nil ? snapshot.primaryLightingColor.map { RGBPatch(r: $0.r, g: $0.g, b: $0.b) } : nil,
-            lightingEffect: lightingEffect,
+            pollRate: snapshot.pollRate, sleepTimeout: snapshot.sleepTimeout, lowBatteryThresholdRaw: snapshot.lowBatteryThresholdRaw, scrollMode: device.supportsScrollModeControls ? snapshot.scrollMode : nil, scrollAcceleration: device.supportsScrollModeControls ? snapshot.scrollAcceleration : nil,
+            scrollSmartReel: device.supportsScrollModeControls ? snapshot.scrollSmartReel : nil, dpiStages: Array(snapshot.stageValues.prefix(snapshot.stageCount)), dpiStagePairs: Array(snapshot.stagePairs.prefix(snapshot.stageCount)),
+            ledBrightness: device.supportsLightingBrightnessControls ? snapshot.ledBrightness : nil, ledRGB: lightingEffect == nil ? snapshot.primaryLightingColor.map { RGBPatch(r: $0.r, g: $0.g, b: $0.b) } : nil, lightingEffect: lightingEffect,
             usbLightingZoneLEDIDs: {
                 if let lightingEffect, lightingEffect.kind == .staticColor { return usbLightingZoneLEDIDs(for: device, zoneID: normalizedZoneID) }
                 if lightingEffect == nil { return usbLightingZoneLEDIDs(for: device, zoneID: normalizedZoneID) }
                 return nil
             }())
-        return PersistedSettingsRestorePlan(snapshot: snapshot, patch: patch, buttonBindings: snapshot.buttonBindings)
+        return PersistedSettingsRestorePlan(snapshot: snapshot, patch: patch.supportedUSBControls(for: device), buttonBindings: snapshot.buttonBindings)
     }
 
     func persistedLightingPresentationPlan(device: MouseDevice) -> PersistedLightingRestorePlan? {

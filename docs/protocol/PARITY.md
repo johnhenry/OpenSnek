@@ -14,6 +14,8 @@ Target device baseline:
 - Naga Pro (`USB PIDs 0x008F, 0x0090`, `BT PID 0x0092`, contributor validated)
 - Basilisk 2017 (`USB PID 0x0064`, OpenRazer-backed USB profile only)
 - Lancehead Tournament Edition (`USB PID 0x0060`, OpenRazer-backed USB profile only)
+- Huntsman Mini (`USB PID 0x0257`, keyboard, OpenRazer-backed USB lighting-only profile)
+- Tartarus Pro (`USB PID 0x0244`, keypad, OpenRazer-backed USB lighting-only profile)
 
 Transport paths:
 - USB/2.4GHz: 90-byte HID report protocol

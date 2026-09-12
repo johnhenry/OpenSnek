@@ -419,9 +419,11 @@ private struct RefreshStateReadContext {
 
     func shouldTreatPartialUSBTelemetryAsUnavailable(_ state: MouseState, device: MouseDevice, wasRecoveringUSBBackoff: Bool, hasCachedState: Bool) -> Bool {
         guard device.transport == .usb else { return false }
-        guard resolvedProfile(for: device) != nil else { return false }
+        guard let profile = resolvedProfile(for: device) else { return false }
         guard wasRecoveringUSBBackoff || !hasCachedState else { return false }
-        return state.dpi_stages.values == nil || state.poll_rate == nil || state.led_value == nil
+        // Lighting-only devices intentionally omit mouse telemetry. Only missing
+        // supported controls should keep a present device in recovery.
+        return (profile.supportsDPIControls && state.dpi_stages.values == nil) || (profile.supportsPollRateControls && state.poll_rate == nil) || state.led_value == nil
     }
 
     static func usbTelemetryUnavailableError() -> NSError { NSError(domain: "OpenSnek.AppStateDeviceController", code: 1, userInfo: [NSLocalizedDescriptionKey: usbTelemetryUnavailableMessage]) }
