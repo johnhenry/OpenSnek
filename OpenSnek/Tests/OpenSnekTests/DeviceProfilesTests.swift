@@ -485,8 +485,7 @@ final class DeviceProfilesTests: XCTestCase {
         for profile in DeviceProfiles.all where profile.usbBrightnessLEDIDs == nil { XCTAssertEqual(profile.allUSBBrightnessLEDIDs, profile.allUSBLightingLEDIDs, "profile \(profile.id) \(profile.transport)") }
 
         let overridden = DeviceProfile(
-            id: .orochiV2, productName: "Brightness Override Test Device", transport: .usb, supportedProducts: [0x7778], buttonLayout: ButtonSlotLayout(visibleSlots: [], writableSlots: []), supportsAdvancedLightingEffects: true, usbLightingLEDIDs: [0x05],
-            usbBrightnessLEDIDs: [0x00])
+            id: .orochiV2, productName: "Brightness Override Test Device", transport: .usb, supportedProducts: [0x7778], buttonLayout: ButtonSlotLayout(visibleSlots: [], writableSlots: []), supportsAdvancedLightingEffects: true, usbLightingLEDIDs: [0x05], usbBrightnessLEDIDs: [0x00])
         XCTAssertEqual(overridden.allUSBLightingLEDIDs, [0x05])
         XCTAssertEqual(overridden.allUSBBrightnessLEDIDs, [0x00])
     }

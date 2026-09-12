@@ -6,7 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 - Added contributor-validated Razer Naga Pro support over USB (wired `0x008F` and 2.4 GHz receiver `0x0090`) and Bluetooth (`0x0092`), including DPI stages, two-zone static lighting/brightness, mapped onboard profiles, and grouped remapping for the known-safe buttons on all three side panels. Native default restore remains unavailable for side-panel slots whose factory blocks are unknown, and undecoded class-`0x03` slots remain read-only.
-- Added contributor-validated USB profiles for the Razer Basilisk (2017, `0x0064`) and Razer Lancehead Tournament Edition (`0x0060`): DPI (scalar, independent X/Y, and live 5-stage tables), poll rate, and multi-zone extended-matrix lighting, all hardware-validated with write/readback/restore probes on contributor hardware. Button remap and onboard profiles are not mapped yet and stay hidden.
+- Added contributor-validated USB profiles for the Razer Basilisk (2017, `0x0064`) and Razer Lancehead Tournament Edition (`0x0060`): DPI (scalar, independent X/Y, and live 5-stage tables), poll rate, and multi-zone extended-matrix lighting. Contributor hardware validation covers DPI, poll-rate reads, and lighting write/readback/restore probes. Button remap and onboard profiles are not mapped yet and stay hidden; saved-settings restore skips unsupported power controls on these wired mice.
 - Added per-profile USB control capability flags (`supportsDPIControls`, `supportsPollRateControls`, `supportsPowerManagementControls`, `supportsButtonRemapControls`), a `DeviceFormFactor` (mouse/keyboard/keypad), and a per-profile brightness LED override so future non-mouse device profiles do not inherit mouse capabilities.
 
 ### Changed

@@ -173,6 +173,8 @@ Support is based on hardware validation reported by [varunyellina in PR #106](ht
 The remaining device-dependent work is tracked in [issue #56](https://github.com/gh123man/OpenSnek/issues/56).
 ## Basilisk (2017)
 
+Support for this device and the Lancehead Tournament Edition below is based on hardware validation reported by [johnhenry in PR #114](https://github.com/gh123man/OpenSnek/pull/114).
+
 USB PID `0x0064`, no Bluetooth transport. This is the original 2017 Basilisk; it is not part of the Basilisk V3 USB family assumptions. Ships transaction ID `0x1F` (contributor validated; hardware also answers OpenRazer's `0x3F`).
 
 | Feature Area | USB | BT | Notes |
@@ -210,6 +212,12 @@ USB PID `0x0060` (wired), no Bluetooth transport. Ships transaction ID `0x1F` (c
 | Button remap: unsupported slots | `Hidden` | `No transport` | The standard mouse slots are visible read-only in the profile metadata |
 | Scroll controls | `Not shipped` | `No transport` | `supportsScrollModeControls` is false |
 | Onboard hardware profiles | `Single slot` | `No transport` | Profile ships with `onboardProfileCount = 1`; OpenRazer exposes VARSTORE DPI stages but OpenSnek has not mapped a profile CRUD surface for this device |
+
+### Saved-settings reconnect validation
+
+Automatic restore omits sleep timeout and battery-threshold writes for both wired profiles, including snapshots saved with mouse-editor defaults. Unit coverage checks initial restore, disconnect without further writes, and reconnect restoring DPI, poll rate, and lighting while preserving the live active DPI stage.
+
+Maintainer hardware validation remains pending: select a saved local profile with restore-on-connect enabled, change the mouse's active DPI stage, unplug it, and reconnect. Confirm lighting and the saved DPI table return, the live active stage remains selected, and the event log contains no power-setting writes or restore failures.
 
 ## References
 
