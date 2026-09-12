@@ -128,7 +128,15 @@ final actor LocalBridgeBackend: HIDAccessRefreshControllingBackend, ApplyOptions
     private func recordUSBControlAvailability(for device: MouseDevice, error: Error) {
         guard device.transport == .usb else { return }
         let availability: USBControlAvailability
-        if BridgeClient.isUSBTelemetryUnavailableError(error) { availability = .receiverPresentMouseUnavailable } else if Self.isDeviceNotAvailableError(error) { availability = .receiverAbsent } else { availability = usbControlAvailabilityByDeviceID[device.id] ?? .unknown }
+        if BridgeClient.isUSBNoControlInterfaceError(error) {
+            availability = .noControlInterface
+        } else if BridgeClient.isUSBTelemetryUnavailableError(error) {
+            availability = .receiverPresentMouseUnavailable
+        } else if Self.isDeviceNotAvailableError(error) {
+            availability = .receiverAbsent
+        } else {
+            availability = usbControlAvailabilityByDeviceID[device.id] ?? .unknown
+        }
         if availability != .unknown { recordUSBControlAvailability(availability, for: device.id, updatedAt: Date(), publishSnapshot: true) }
     }
 
@@ -590,6 +598,7 @@ final actor LocalBridgeBackend: HIDAccessRefreshControllingBackend, ApplyOptions
         case .receiverPresentMouseReachable, .unknown: return
         case .receiverPresentMouseUnavailable: throw BridgeError.usbMouseUnavailable
         case .receiverAbsent: throw BridgeError.commandFailed("Device not available")
+        case .noControlInterface: throw BridgeError.usbNoControlInterface
         }
     }
 

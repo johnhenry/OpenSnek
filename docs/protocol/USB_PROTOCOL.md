@@ -28,6 +28,14 @@ Razer devices communicate via USB HID Feature Reports. The protocol uses 90-byte
 
 **Important**: Bluetooth behavior varies by device/firmware/OS HID stack. Some devices expose configuration over Bluetooth HID, but transport method and transaction ID may differ from USB.
 
+### Devices without a standard control interface
+
+For the standard Razer USB path, at least one enumerated HID interface must advertise a maximum feature-report size of 90 bytes or more. If interfaces exist but none meets that requirement, availability is `noControlInterface`; state reads return a distinct unsupported-interface error and fast DPI reads return no snapshot, without issuing HID commands. This differs from a removed receiver or a receiver whose mouse is asleep.
+
+The app and background-service snapshots present this state as Unsupported, block controls, and stop repeated full telemetry reads. Physical discovery/reconnect can reset the classification so a newly available control interface is not permanently excluded. The error is recognized both directly and after IPC message serialization.
+
+The motivating Kraken Kitty V2 case was reported on [johnhenry's hardware in PR #119](https://github.com/gh123man/OpenSnek/pull/119). Maintainer hardware validation remains pending: connect the headset alongside a supported mouse, confirm Unsupported without repeated refresh errors, unplug/replug it, and verify the supported mouse still disconnects and recovers normally. Ordinary headset audio and media-key input should remain functional.
+
 ---
 
 ## Report Structure

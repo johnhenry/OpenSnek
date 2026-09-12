@@ -24,6 +24,7 @@ public enum USBControlAvailability: String, Codable, Hashable, Sendable {
     case receiverPresentMouseReachable
     case receiverPresentMouseUnavailable
     case receiverAbsent
+    case noControlInterface
 
     public var diagnosticsLabel: String {
         switch self {
@@ -31,12 +32,13 @@ public enum USBControlAvailability: String, Codable, Hashable, Sendable {
         case .receiverPresentMouseReachable: return "Mouse responding"
         case .receiverPresentMouseUnavailable: return "Receiver present, mouse unavailable"
         case .receiverAbsent: return "Receiver absent"
+        case .noControlInterface: return "No Razer control interface"
         }
     }
 
     public var blocksUSBControlInteraction: Bool {
         switch self {
-        case .receiverPresentMouseUnavailable, .receiverAbsent: return true
+        case .receiverPresentMouseUnavailable, .receiverAbsent, .noControlInterface: return true
         case .unknown, .receiverPresentMouseReachable: return false
         }
     }
@@ -46,11 +48,13 @@ public enum USBControlAvailability: String, Codable, Hashable, Sendable {
 public enum BridgeError: LocalizedError, Sendable {
     case commandFailed(String)
     case usbMouseUnavailable
+    case usbNoControlInterface
 
     public var errorDescription: String? {
         switch self {
         case .commandFailed(let msg): return msg
         case .usbMouseUnavailable: return "USB device telemetry unavailable. Feature-report interface did not return usable responses."
+        case .usbNoControlInterface: return "This Razer device does not expose the standard Razer USB control interface, so OpenSnek cannot configure it on macOS."
         }
     }
 }
