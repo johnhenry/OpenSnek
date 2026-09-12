@@ -17,6 +17,7 @@ import OpenSnekHardware
 
     func refreshDpiFast(for device: MouseDevice, now: Date) async {
         guard !isTearingDown else { return }
+        guard device.supportsDPIControls else { return }
         guard device.transport.supportsHIDBackedControls else { return }
         guard !isStrictlyUnsupported(device) else { return }
         guard !refreshingFastDpiDeviceIDs.contains(device.id) else { return }

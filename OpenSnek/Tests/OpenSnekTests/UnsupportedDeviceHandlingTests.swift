@@ -89,6 +89,38 @@ final class UnsupportedDeviceHandlingTests: XCTestCase {
         XCTAssertTrue(capabilities.lighting)
     }
 
+    func testProfiledDeviceCapabilitiesFollowProfileControlFlags() async {
+        let client = BridgeClient(startHIDMonitoring: false)
+
+        let lightingOnly = DeviceProfile(
+            id: .orochiV2, productName: "Lighting-Only Test Device", transport: .usb, supportedProducts: [0x7777], buttonLayout: ButtonSlotLayout(visibleSlots: [], writableSlots: []), supportsAdvancedLightingEffects: true, formFactor: .keyboard, supportsDPIControls: false,
+            supportsPollRateControls: false, supportsPowerManagementControls: false, supportsButtonRemapControls: false)
+        let keyboard = await client.resolvedUSBStateCapabilities(profile: lightingOnly, stages: Optional<(Int, [Int])>.none, poll: nil, sleepTimeout: nil, led: 128)
+        XCTAssertFalse(keyboard.dpi_stages)
+        XCTAssertFalse(keyboard.poll_rate)
+        XCTAssertFalse(keyboard.power_management)
+        XCTAssertFalse(keyboard.button_remap)
+        XCTAssertTrue(keyboard.lighting)
+
+        let fullMouse = await client.resolvedUSBStateCapabilities(profile: DeviceProfiles.basiliskV3ProUSB, stages: Optional<(Int, [Int])>.none, poll: nil, sleepTimeout: nil, led: nil)
+        XCTAssertTrue(fullMouse.dpi_stages)
+        XCTAssertTrue(fullMouse.poll_rate)
+        XCTAssertTrue(fullMouse.power_management)
+        XCTAssertTrue(fullMouse.button_remap)
+        XCTAssertTrue(fullMouse.lighting)
+    }
+
+    func testFastDpiPollingKeepsCurrentBehaviorForDPICapableDevices() {
+        let unprofiled = MouseDevice(id: "usb-unprofiled", vendor_id: 0x1532, product_id: 0x1234, product_name: "Razer USB Mystery Mouse", transport: .usb, path_b64: "", serial: nil, firmware: nil)
+        let profiledMouse = MouseDevice(id: "usb-v3pro", vendor_id: 0x1532, product_id: 0x00AB, product_name: "Razer Basilisk V3 Pro", transport: .usb, path_b64: "", serial: nil, firmware: nil)
+
+        XCTAssertTrue(unprofiled.supportsDPIControls)
+        XCTAssertTrue(profiledMouse.supportsDPIControls)
+        XCTAssertTrue(BridgeClient.shouldUseFastDPIPolling(device: unprofiled, armedPassiveDpiDeviceIDs: [], observedPassiveDpiDeviceIDs: []))
+        XCTAssertTrue(BridgeClient.shouldUseFastDPIPolling(device: profiledMouse, armedPassiveDpiDeviceIDs: [], observedPassiveDpiDeviceIDs: []))
+        XCTAssertFalse(BridgeClient.shouldUseFastDPIPolling(device: profiledMouse, armedPassiveDpiDeviceIDs: [profiledMouse.id], observedPassiveDpiDeviceIDs: [profiledMouse.id]))
+    }
+
     func testManagerNotPermittedWithInputMonitoringGrantedIsNotADenial() {
         XCTAssertFalse(BridgeClient.resolvedManagerAccessDenied(openResult: kIOReturnNotPermitted, inputMonitoringGranted: true))
         XCTAssertTrue(BridgeClient.resolvedManagerAccessDenied(openResult: kIOReturnNotPermitted, inputMonitoringGranted: false))

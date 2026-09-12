@@ -533,6 +533,10 @@ actor BridgeClient {
     }
 
     func readDpiStagesFast(device: MouseDevice) async throws -> (active: Int, values: [Int])? {
+        // Devices without DPI hardware must never receive DPI commands from the
+        // fast-poll path; the UI is capability-gated, but this backend entry is
+        // also reachable directly through the background-service protocol.
+        guard device.supportsDPIControls else { return nil }
         if device.transport == .bluetooth {
             let supportsMappedOnboardProfiles = DeviceProfiles.resolve(vendorID: device.vendor_id, productID: device.product_id, transport: device.transport)?.supportsMappedOnboardProfileCRUD == true
             if passiveDpiObservedDeviceIDs.contains(device.id), let state = lastStateByDeviceID[device.id], let active = state.dpi_stages.active_stage, let values = state.dpi_stages.values, !values.isEmpty { return (active: max(0, min(values.count - 1, active)), values: values) }

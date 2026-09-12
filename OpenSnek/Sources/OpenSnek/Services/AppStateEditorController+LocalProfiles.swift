@@ -323,7 +323,10 @@ import OpenSnekCore
     }
 
     func adaptedLocalProfileContent(_ content: OpenSnekLocalProfileContent, for device: MouseDevice) -> OpenSnekLocalProfileContent {
-        let dpi = content.dpi.map { adaptDPI($0, for: device) }
+        // Cross-device profiles routinely carry mouse DPI tables; a device
+        // without DPI hardware must drop them here so the apply path never
+        // issues an unsupported DPI write ahead of the lighting portion.
+        let dpi = device.supportsDPIControls ? content.dpi.map { adaptDPI($0, for: device) } : nil
         let buttonBindings = adaptedButtonBindings(content.buttonBindings, for: device)
         let lighting = adaptedLighting(content, for: device)
         return OpenSnekLocalProfileContent(
