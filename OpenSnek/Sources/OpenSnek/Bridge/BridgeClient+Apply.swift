@@ -55,6 +55,9 @@ extension BridgeClient {
     }
 
     private func applyUSB(device: MouseDevice, patch: DevicePatch, options: ApplyOptions) async throws -> MouseState {
+        // Background-service callers can bypass editor adaptation. Filter the
+        // entire patch before writes and readback projection so lighting can apply.
+        let patch = patch.supportedUSBControls(for: device)
         try await deferUSBReconnectReadIfNeeded(deviceID: device.id, operation: "apply")
         let orderedSessions = sessionsFor(device: device)
         guard !orderedSessions.isEmpty else {

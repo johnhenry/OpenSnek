@@ -6,13 +6,9 @@ import OpenSnekCore
 
 /// Exercises DPI gating behavior for lighting-only (keyboard/keypad) device profiles.
 final class LightingOnlyDeviceGatingTests: XCTestCase {
-    private func makeKeyboardDevice() -> MouseDevice {
-        MouseDevice(id: "usb-huntsman-mini", vendor_id: 0x1532, product_id: 0x0257, product_name: "Razer Huntsman Mini", transport: .usb, path_b64: "", serial: "KB-GATING-TEST", firmware: nil, profile_id: .huntsmanMini)
-    }
+    private func makeKeyboardDevice() -> MouseDevice { MouseDevice(id: "usb-huntsman-mini", vendor_id: 0x1532, product_id: 0x0257, product_name: "Razer Huntsman Mini", transport: .usb, path_b64: "", serial: "KB-GATING-TEST", firmware: nil, profile_id: .huntsmanMini) }
 
-    private func makeKeypadDevice() -> MouseDevice {
-        MouseDevice(id: "usb-tartarus-pro", vendor_id: 0x1532, product_id: 0x0244, product_name: "Razer Tartarus Pro", transport: .usb, path_b64: "", serial: "PAD-GATING-TEST", firmware: nil, profile_id: .tartarusPro)
-    }
+    private func makeKeypadDevice() -> MouseDevice { MouseDevice(id: "usb-tartarus-pro", vendor_id: 0x1532, product_id: 0x0244, product_name: "Razer Tartarus Pro", transport: .usb, path_b64: "", serial: "PAD-GATING-TEST", firmware: nil, profile_id: .tartarusPro) }
 
     func testLightingOnlyDevicesReportNoDPIControls() {
         XCTAssertFalse(makeKeyboardDevice().supportsDPIControls)

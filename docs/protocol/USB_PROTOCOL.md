@@ -945,6 +945,12 @@ reliable on the local USB stack.
 - Poll-rate reads (`00:85`) return `status 0x05` (command not supported) on contributor hardware.
 - Analog actuation (per-key actuation depth) has no public protocol; OpenRazer exposes lighting and macros only.
 
+### USB profile capability enforcement
+
+Before executing a USB apply, OpenSnek removes DPI (including active-stage-only changes), poll-rate, power-management, and button-remap/profile-action fields disabled by the resolved profile. The filtered patch is also used for state projection. Saved-settings restore uses the same filter so unsupported mouse fields do not prevent lighting from applying on keyboards/keypads. Unknown profiles retain the existing command behavior.
+
+The app's initial-read and reconnect telemetry check requires DPI and poll-rate values only when the profile supports those controls. Missing brightness still indicates incomplete lighting telemetry for these lighting-only devices.
+
 ### Transaction ID by Device
 
 | Device Type | Transaction ID |

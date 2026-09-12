@@ -223,6 +223,8 @@ Maintainer hardware validation remains pending: select a saved local profile wit
 
 ## Huntsman Mini
 
+Support for this keyboard and the Tartarus Pro below is based on hardware validation reported by [johnhenry in PR #115](https://github.com/gh123man/OpenSnek/pull/115).
+
 USB PID `0x0257`, no Bluetooth transport. Keyboard (`formFactor = .keyboard`); the first non-mouse device profile in OpenSnek. Ships transaction ID `0x1F` (contributor validated; OpenRazer uses `0x3F`). The JP variant (`0x0269`) and the Analog variant (`0x0282`) are not registered.
 
 | Feature Area | USB | BT | Notes |
@@ -260,6 +262,12 @@ USB PID `0x0244`, no Bluetooth transport. Keypad (`formFactor = .keypad`). Uses 
 | Button remap: unsupported slots | `Hidden` | `No transport` | No slots are documented |
 | Scroll controls | `Not shipped` | `No transport` | Not applicable to a keypad |
 | Onboard hardware profiles | `Single slot` | `No transport` | Profile ships with `onboardProfileCount = 1`. OpenRazer deliberately never switches the Tartarus Pro into driver mode (`DRIVER_MODE = False`) because its analog input handling misbehaves; OpenSnek likewise only reads device mode and must not write mode `0x03` to this device |
+
+### Lighting-only connection and restore validation
+
+Initial reads and reconnect recovery require lighting brightness but do not require unsupported DPI or poll-rate telemetry. Saved-settings restore and USB backend applies filter DPI, poll-rate, power-management, and remapping fields according to the device profile, preserving lighting even when a saved snapshot contains mouse-editor defaults.
+
+Unit coverage checks initial connection, no restore writes while disconnected, lighting restore after reconnect, and continued rejection of missing brightness telemetry. Maintainer hardware validation remains pending: select a saved lighting profile with restore-on-connect enabled, unplug and reconnect each device, and confirm the backlight returns without a disconnected status or unsupported mouse-command failures. On the Tartarus Pro, also verify ordinary analog/key input remains functional.
 
 ## References
 
